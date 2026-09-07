@@ -152,6 +152,13 @@ test('every advertised tool has an executable handler', async () => {
     get_companies: {},
     get_tasks: {},
     create_task: { text: 'Teste', entity_id: 1, entity_type: 'leads', complete_till: 1 },
+    get_custom_fields: { entity_type: 'leads' },
+    get_custom_field_values: { entity_type: 'leads', entity_id: 1 },
+    update_custom_fields: {
+      entity_type: 'leads',
+      entity_id: 1,
+      fields: [{ field_id: 1, value: 'x' }],
+    },
     get_users: {},
     get_loss_reasons: {},
     get_loss_reason: { id: 1 },

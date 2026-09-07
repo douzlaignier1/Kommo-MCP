@@ -1,5 +1,6 @@
 import {
   KommoAPI,
+  type CustomFieldInput,
   type KommoEntityType,
   type LeadOrderField,
   type SortDirection,
@@ -148,6 +149,39 @@ export async function executeTool(
             : {}),
         }),
       );
+    }
+
+    case 'get_custom_fields': {
+      const entityType = args?.entity_type as KommoEntityType;
+      if (!entityType) return errorResult('Requer entity_type (leads, contacts ou companies).');
+      return textResult(
+        await kommoAPI.getCustomFields(entityType, {
+          limit: (args?.limit as number) || 250,
+          page: (args?.page as number) || 1,
+        }),
+      );
+    }
+
+    case 'get_custom_field_values': {
+      const entityType = args?.entity_type as KommoEntityType;
+      const entityId = args?.entity_id as number;
+      if (!entityType || typeof entityId !== 'number') {
+        return errorResult('Requer entity_type e entity_id (número).');
+      }
+      return textResult(await kommoAPI.getCustomFieldValues(entityType, entityId));
+    }
+
+    case 'update_custom_fields': {
+      const entityType = args?.entity_type as KommoEntityType;
+      const entityId = args?.entity_id as number;
+      const fields = args?.fields as CustomFieldInput[] | undefined;
+      if (!entityType || typeof entityId !== 'number') {
+        return errorResult('Requer entity_type e entity_id (número).');
+      }
+      if (!Array.isArray(fields) || fields.length === 0) {
+        return errorResult('Requer fields com ao menos um campo.');
+      }
+      return textResult(await kommoAPI.updateCustomFields(entityType, entityId, fields));
     }
 
     case 'get_users':

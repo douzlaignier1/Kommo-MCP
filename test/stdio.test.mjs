@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Client } from '@modelcontextprotocol/client';
 import { StdioClientTransport } from '@modelcontextprotocol/client/stdio';
+import { MCP_TOOLS } from '../dist/mcp/tool-definitions.js';
 
 test('stdio transport serves local MCP clients', async () => {
   const transport = new StdioClientTransport({
@@ -20,7 +21,7 @@ test('stdio transport serves local MCP clients', async () => {
     await client.connect(transport);
     assert.equal(client.getProtocolEra(), 'legacy');
     const { tools } = await client.listTools();
-    assert.equal(tools.length, 23);
+    assert.equal(tools.length, MCP_TOOLS.length);
   } finally {
     await client.close();
   }

@@ -17,6 +17,7 @@ const WRITE_TOOLS = new Set([
   'unpin_note',
   'run_salesbot',
   'stop_salesbot',
+  'update_custom_fields',
 ]);
 
 function safeToolError(error: unknown) {

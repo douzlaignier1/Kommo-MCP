@@ -146,6 +146,35 @@ export interface KommoCustomFieldValue {
   field_id?: number;
   field_name?: string;
   field_code?: string;
+  field_type?: string;
+  values?: Array<Record<string, unknown>>;
+}
+
+export interface KommoCustomFieldDefinition {
+  id: number;
+  name: string;
+  code?: string | null;
+  type: string;
+  entity_type?: string;
+  is_api_only?: boolean;
+  enums?: Array<{ id: number; value: string; code?: string | null; sort?: number }>;
+}
+
+export interface KommoReadableField {
+  field_id?: number;
+  field_code: string | null;
+  field_name: string | null;
+  field_type: string | null;
+  values: unknown[];
+  raw: Array<Record<string, unknown>>;
+}
+
+export interface CustomFieldInput {
+  field_id?: number;
+  field_code?: string;
+  value?: string | number | boolean | null;
+  enum_id?: number;
+  enum_code?: string;
   values?: Array<Record<string, unknown>>;
 }
 
@@ -532,6 +561,83 @@ export class KommoAPI {
 
   async updateLead(id: number, lead: Partial<KommoLead>): Promise<KommoLead> {
     const response = await this.client.patch(`/api/v4/leads/${id}`, lead);
+    return response.data;
+  }
+
+  // ===== CAMPOS PERSONALIZADOS =====
+  async getCustomFields(
+    entityType: KommoEntityType,
+    params?: KommoQueryParams,
+  ): Promise<{ _embedded: { custom_fields: KommoCustomFieldDefinition[] } }> {
+    const response = await this.client.get(`/api/v4/${entityType}/custom_fields`, {
+      params: { limit: 250, page: 1, ...params },
+    });
+    return response.data && typeof response.data === 'object'
+      ? response.data
+      : { _embedded: { custom_fields: [] } };
+  }
+
+  async getCustomFieldValues(
+    entityType: KommoEntityType,
+    entityId: number,
+  ): Promise<{ entity_type: KommoEntityType; entity_id: number; fields: KommoReadableField[] }> {
+    const response = await this.client.get(`/api/v4/${entityType}/${entityId}`);
+    const values: KommoCustomFieldValue[] = response.data?.custom_fields_values ?? [];
+    return {
+      entity_type: entityType,
+      entity_id: entityId,
+      fields: values.map((field) => ({
+        field_id: field.field_id,
+        field_code: field.field_code ?? null,
+        field_name: field.field_name ?? null,
+        field_type: field.field_type ?? null,
+        values: (field.values ?? []).map((value) => value.value ?? value),
+        raw: field.values ?? [],
+      })),
+    };
+  }
+
+  /**
+   * Monta o custom_fields_values do PATCH. Cada entrada aceita um atalho
+   * (value / enum_id / enum_code) ou o array values cru, para os tipos que a
+   * API documenta de forma própria.
+   */
+  private buildCustomFieldsPayload(fields: CustomFieldInput[]): KommoCustomFieldValue[] {
+    if (fields.length === 0) throw new Error('Informe ao menos um campo em fields.');
+    return fields.map((field, index) => {
+      if (field.field_id === undefined && !field.field_code) {
+        throw new Error(`fields[${index}]: informe field_id ou field_code.`);
+      }
+      const target: KommoCustomFieldValue = {};
+      if (field.field_id !== undefined) target.field_id = field.field_id;
+      if (field.field_code) target.field_code = field.field_code;
+
+      if (field.values !== undefined) {
+        target.values = field.values;
+      } else if (field.enum_id !== undefined) {
+        target.values = [{ enum_id: field.enum_id }];
+      } else if (field.enum_code !== undefined) {
+        target.values = [{ enum_code: field.enum_code }];
+      } else if (field.value === null) {
+        // Limpar um campo no Kommo e enviar values: null, nao uma lista vazia.
+        target.values = null as unknown as Array<Record<string, unknown>>;
+      } else if (field.value !== undefined) {
+        target.values = [{ value: field.value }];
+      } else {
+        throw new Error(`fields[${index}]: informe value, enum_id, enum_code ou values.`);
+      }
+      return target;
+    });
+  }
+
+  async updateCustomFields(
+    entityType: KommoEntityType,
+    entityId: number,
+    fields: CustomFieldInput[],
+  ): Promise<unknown> {
+    const response = await this.client.patch(`/api/v4/${entityType}/${entityId}`, {
+      custom_fields_values: this.buildCustomFieldsPayload(fields),
+    });
     return response.data;
   }
 

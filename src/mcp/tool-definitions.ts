@@ -201,6 +201,91 @@ export const MCP_TOOLS: McpToolDefinition[] = [
     },
   },
   {
+    name: 'get_custom_fields',
+    title: 'Listar campos personalizados',
+    description:
+      'Listar as definições de campos personalizados de leads, contatos ou empresas (id, código, tipo e opções de select).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        entity_type: {
+          type: 'string',
+          enum: ['leads', 'contacts', 'companies'],
+          description: 'Tipo da entidade',
+        },
+        ...paginationProperties,
+      },
+      required: ['entity_type'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'get_custom_field_values',
+    title: 'Ler campos personalizados de um registro',
+    description:
+      'Ler os valores dos campos personalizados preenchidos em um lead, contato ou empresa específico.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        entity_type: {
+          type: 'string',
+          enum: ['leads', 'contacts', 'companies'],
+          description: 'Tipo da entidade',
+        },
+        entity_id: { type: 'number', description: 'ID da entidade' },
+      },
+      required: ['entity_type', 'entity_id'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'update_custom_fields',
+    title: 'Atualizar campos personalizados',
+    description:
+      'Gravar valores de campos personalizados em um lead, contato ou empresa. Use value para texto/número/data, enum_id ou enum_code para select, values para o formato cru da API, e value: null para limpar o campo.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        entity_type: {
+          type: 'string',
+          enum: ['leads', 'contacts', 'companies'],
+          description: 'Tipo da entidade',
+        },
+        entity_id: { type: 'number', description: 'ID da entidade' },
+        fields: {
+          type: 'array',
+          minItems: 1,
+          description: 'Campos a gravar',
+          items: {
+            type: 'object',
+            properties: {
+              field_id: { type: 'number', description: 'ID do campo' },
+              field_code: { type: 'string', description: 'Código do campo (alternativa ao id)' },
+              value: {
+                type: ['string', 'number', 'boolean', 'null'],
+                description: 'Valor simples; null limpa o campo',
+              },
+              enum_id: { type: 'number', description: 'Opção de select por id' },
+              enum_code: { type: 'string', description: 'Opção de select por código' },
+              values: {
+                type: 'array',
+                items: { type: 'object' },
+                description: 'Formato cru da API, para tipos que exigem estrutura própria',
+              },
+            },
+            additionalProperties: false,
+          },
+        },
+        confirm: {
+          type: 'boolean',
+          description: 'Confirma explicitamente a operação de escrita quando exigido.',
+        },
+      },
+      required: ['entity_type', 'entity_id', 'fields'],
+      additionalProperties: false,
+    },
+  },
+  {
     name: 'get_users',
     title: 'Listar usuários',
     description: 'Obter lista de usuários da conta Kommo',

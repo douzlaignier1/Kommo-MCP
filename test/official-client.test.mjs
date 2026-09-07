@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
 import { createApp } from '../dist/http-streamable.js';
+import { MCP_TOOLS } from '../dist/mcp/tool-definitions.js';
 
 async function verifyDiscovery(url, createLeadCalls, versionNegotiation) {
   const initialCreateLeadCalls = createLeadCalls.length;
@@ -22,7 +23,7 @@ async function verifyDiscovery(url, createLeadCalls, versionNegotiation) {
       client.listPrompts(),
     ]);
 
-    assert.equal(tools.length, 23);
+    assert.equal(tools.length, MCP_TOOLS.length);
     assert.equal(resources.length, 5);
     assert.equal(prompts.length, 4);
     assert.equal(tools.find((tool) => tool.name === 'get_leads')?.annotations?.readOnlyHint, true);
