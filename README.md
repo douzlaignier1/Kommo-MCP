@@ -44,8 +44,9 @@ Desktop, etc.).
   compatibilidade stateless para clientes da família 2025
 - **Dois transportes oficiais**: Streamable HTTP para serviços remotos e
   `stdio` para clientes locais
-- **23 tools**: leads, contatos, empresas, tarefas, pipelines, notas,
-  relatórios, dashboard, Salesbot, motivos de perda
+- **34 tools**: leads, contatos, empresas, tarefas, pipelines, notas,
+  campos personalizados, tags, eventos, não organizados, relatórios,
+  dashboard, Salesbot, motivos de perda
 - **5 resources**: relatório de vendas, pipelines, motivos de perda,
   dashboard, conta
 - **4 prompts**: templates para análise de vendas, leads, pipelines e motivos
@@ -210,13 +211,13 @@ pela tela de Connectors.
 
 ### Leads
 
-| Tool          | Descrição                                                |
-| ------------- | -------------------------------------------------------- |
-| `get_leads`   | Listar leads (`limit`, `page`, `query`)                  |
-| `get_lead`    | Obter lead por ID                                        |
-| `create_lead` | Criar lead (`name`, `price`, `status_id`, `pipeline_id`) |
-| `update_lead` | Atualizar lead existente                                 |
-| `move_lead`   | Mover lead para outro status/pipeline                    |
+| Tool          | Descrição                                                                                                                                                                                                     |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `get_leads`   | Listar leads, mais recentes primeiro (`order_by`, `order_dir`, `created_from`/`created_to`, `updated_from`/`updated_to`, `pipeline_id`, `status_id`, `responsible_user_id`, `with`, `limit`, `page`, `query`) |
+| `get_lead`    | Obter lead por ID                                                                                                                                                                                             |
+| `create_lead` | Criar lead (`name`, `price`, `status_id`, `pipeline_id`)                                                                                                                                                      |
+| `update_lead` | Atualizar lead existente                                                                                                                                                                                      |
+| `move_lead`   | Mover lead para outro status/pipeline                                                                                                                                                                         |
 
 ### Pipelines e relatórios
 
@@ -234,6 +235,36 @@ pela tela de Connectors.
 | `get_tasks`     | Listar tarefas                    |
 | `create_task`   | Criar tarefa vinculada a entidade |
 | `get_users`     | Listar usuários da conta          |
+
+### Campos personalizados
+
+| Tool                      | Descrição                                                                       |
+| ------------------------- | ------------------------------------------------------------------------------- |
+| `get_custom_fields`       | Definições dos campos por entidade, com tipo e opções de select                 |
+| `get_custom_field_values` | Valores preenchidos em um registro                                              |
+| `update_custom_fields`    | Gravar valores (`value`, `enum_id`, `enum_code`, `values`; `value: null` limpa) |
+
+### Tags
+
+| Tool              | Descrição                                      |
+| ----------------- | ---------------------------------------------- |
+| `get_tags`        | Tags cadastradas na conta por tipo de entidade |
+| `get_entity_tags` | Tags aplicadas a um registro                   |
+| `add_tags`        | Adicionar tags preservando as existentes       |
+| `remove_tags`     | Remover tags específicas mantendo as demais    |
+
+> O PATCH de `_embedded.tags` substitui todas as tags da entidade. `add_tags`
+> e `remove_tags` leem o estado atual antes de gravar para não apagar o que
+> já estava aplicado.
+
+### Eventos e não organizados
+
+| Tool                   | Descrição                                            |
+| ---------------------- | ---------------------------------------------------- |
+| `get_events`           | Histórico por entidade, tipo, autor e período        |
+| `get_event_types`      | Tipos de evento registrados pela conta               |
+| `get_unsorted`         | Caixa de entrada de leads ainda não aceitos no funil |
+| `get_unsorted_summary` | Totais e tempo médio de triagem dos não organizados  |
 
 ### Notas
 

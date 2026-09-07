@@ -320,7 +320,8 @@ export const MCP_TOOLS: McpToolDefinition[] = [
   {
     name: 'get_event_types',
     title: 'Tipos de evento',
-    description: 'Listar os tipos de evento que a conta registra, para usar no filtro de get_events.',
+    description:
+      'Listar os tipos de evento que a conta registra, para usar no filtro de get_events.',
     inputSchema: { type: 'object', properties: {}, additionalProperties: false },
   },
   {

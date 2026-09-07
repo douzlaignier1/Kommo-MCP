@@ -819,9 +819,7 @@ export class KommoAPI {
     if (tags.length === 0) throw new Error('Informe ao menos uma tag.');
     const remover = tags.map((tag) => this.normalizeTag(tag));
     const ids = new Set(remover.filter((tag) => tag.id !== undefined).map((tag) => tag.id));
-    const nomes = new Set(
-      remover.filter((tag) => tag.name).map((tag) => tag.name!.toLowerCase()),
-    );
+    const nomes = new Set(remover.filter((tag) => tag.name).map((tag) => tag.name!.toLowerCase()));
     const restantes = (await this.getEntityTags(entityType, entityId))
       .filter((tag) => !ids.has(tag.id) && !nomes.has(tag.name.toLowerCase()))
       .map((tag) => ({ id: tag.id }));
