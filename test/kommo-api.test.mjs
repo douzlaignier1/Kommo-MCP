@@ -266,6 +266,49 @@ test('listLeads orders by newest first and applies documented filters', async (c
   await assert.rejects(() => api.listLeads({ statusId: 20 }), /exige pipeline_id/);
 });
 
+test('tag changes preserve the tags the entity already has', async (context) => {
+  const patches = [];
+  const baseUrl = await withServer(context, async (request, response) => {
+    if (request.method === 'PATCH') {
+      patches.push((await requestBody(request))._embedded.tags);
+      response.writeHead(200, { 'content-type': 'application/json' });
+      response.end(JSON.stringify({ _embedded: { tags: [] } }));
+      return;
+    }
+    response.writeHead(200, { 'content-type': 'application/json' });
+    response.end(
+      JSON.stringify({
+        id: 1,
+        _embedded: {
+          tags: [
+            { id: 10, name: 'aluno' },
+            { id: 20, name: 'whatsapp' },
+          ],
+        },
+      }),
+    );
+  });
+  const api = new KommoAPI({ baseUrl, accessToken: 'test', maxRetries: 0 });
+
+  // Adicionar mantem as duas existentes e acrescenta a nova.
+  await api.addEntityTags('leads', 1, ['novidade']);
+  assert.deepEqual(patches.at(-1), [{ id: 10 }, { id: 20 }, { name: 'novidade' }]);
+
+  // Uma tag que a entidade ja tem nao pode ser duplicada.
+  await api.addEntityTags('leads', 1, ['Aluno']);
+  assert.deepEqual(patches.at(-1), [{ id: 10 }, { id: 20 }]);
+
+  // Remover por nome preserva as demais.
+  await api.removeEntityTags('leads', 1, ['whatsapp']);
+  assert.deepEqual(patches.at(-1), [{ id: 10 }]);
+
+  // Remover por id funciona igual.
+  await api.removeEntityTags('leads', 1, [{ id: 10 }]);
+  assert.deepEqual(patches.at(-1), [{ id: 20 }]);
+
+  await assert.rejects(() => api.addEntityTags('leads', 1, []), /ao menos uma tag/);
+});
+
 test('listLeads returns an empty list when Kommo answers 204', async (context) => {
   const baseUrl = await withServer(context, (_request, response) => {
     response.writeHead(204).end();

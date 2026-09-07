@@ -169,6 +169,15 @@ export interface KommoReadableField {
   raw: Array<Record<string, unknown>>;
 }
 
+export interface KommoTag {
+  id: number;
+  name: string;
+  color?: string | null;
+}
+
+/** Tag informada pelo usuário: nome puro ou objeto com id/name. */
+export type TagInput = string | { id?: number; name?: string };
+
 export interface CustomFieldInput {
   field_id?: number;
   field_code?: string;
@@ -628,6 +637,97 @@ export class KommoAPI {
       }
       return target;
     });
+  }
+
+  // ===== TAGS =====
+  async getTags(
+    entityType: KommoEntityType,
+    params?: KommoQueryParams,
+  ): Promise<{ _embedded: { tags: KommoTag[] } }> {
+    const response = await this.client.get(`/api/v4/${entityType}/tags`, {
+      params: { limit: 250, page: 1, ...params },
+    });
+    return response.data && typeof response.data === 'object'
+      ? response.data
+      : { _embedded: { tags: [] } };
+  }
+
+  async getEntityTags(entityType: KommoEntityType, entityId: number): Promise<KommoTag[]> {
+    const response = await this.client.get(`/api/v4/${entityType}/${entityId}`);
+    return response.data?._embedded?.tags ?? [];
+  }
+
+  private normalizeTag(tag: TagInput): { id?: number; name?: string } {
+    if (typeof tag === 'string') {
+      const name = tag.trim();
+      if (!name) throw new Error('Tag vazia não é permitida.');
+      return { name };
+    }
+    if (tag.id === undefined && !tag.name?.trim()) {
+      throw new Error('Cada tag precisa de id ou name.');
+    }
+    return tag.id !== undefined ? { id: tag.id } : { name: tag.name!.trim() };
+  }
+
+  private tagKey(tag: { id?: number; name?: string }): string {
+    return tag.id !== undefined ? `id:${tag.id}` : `name:${tag.name?.toLowerCase()}`;
+  }
+
+  /**
+   * O PATCH de _embedded.tags SUBSTITUI o conjunto inteiro de tags da
+   * entidade, entao adicionar ou remover exige ler o estado atual antes.
+   */
+  async setEntityTags(
+    entityType: KommoEntityType,
+    entityId: number,
+    tags: TagInput[],
+  ): Promise<KommoTag[]> {
+    const payload = tags.map((tag) => this.normalizeTag(tag));
+    const response = await this.client.patch(`/api/v4/${entityType}/${entityId}`, {
+      _embedded: { tags: payload },
+    });
+    return response.data?._embedded?.tags ?? [];
+  }
+
+  async addEntityTags(
+    entityType: KommoEntityType,
+    entityId: number,
+    tags: TagInput[],
+  ): Promise<KommoTag[]> {
+    if (tags.length === 0) throw new Error('Informe ao menos uma tag.');
+    const atuais = await this.getEntityTags(entityType, entityId);
+    const combinadas: Array<{ id?: number; name?: string }> = [
+      ...atuais.map((tag) => ({ id: tag.id })),
+      ...tags.map((tag) => this.normalizeTag(tag)),
+    ];
+    const vistos = new Set<string>();
+    const nomesAtuais = new Set(atuais.map((tag) => tag.name.toLowerCase()));
+    const unicas = combinadas.filter((tag) => {
+      // Uma tag por nome que a entidade ja tem chegaria duplicada pelo id.
+      if (tag.name && nomesAtuais.has(tag.name.toLowerCase())) return false;
+      const chave = this.tagKey(tag);
+      if (vistos.has(chave)) return false;
+      vistos.add(chave);
+      return true;
+    });
+    return this.setEntityTags(entityType, entityId, unicas);
+  }
+
+  async removeEntityTags(
+    entityType: KommoEntityType,
+    entityId: number,
+    tags: TagInput[],
+  ): Promise<KommoTag[]> {
+    if (tags.length === 0) throw new Error('Informe ao menos uma tag.');
+    const remover = tags.map((tag) => this.normalizeTag(tag));
+    const ids = new Set(remover.filter((tag) => tag.id !== undefined).map((tag) => tag.id));
+    const nomes = new Set(
+      remover.filter((tag) => tag.name).map((tag) => tag.name!.toLowerCase()),
+    );
+    const restantes = (await this.getEntityTags(entityType, entityId))
+      .filter((tag) => !ids.has(tag.id) && !nomes.has(tag.name.toLowerCase()))
+      .map((tag) => ({ id: tag.id }));
+    return this.setEntityTags(entityType, entityId, restantes);
   }
 
   async updateCustomFields(

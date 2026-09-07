@@ -18,6 +18,8 @@ const WRITE_TOOLS = new Set([
   'run_salesbot',
   'stop_salesbot',
   'update_custom_fields',
+  'add_tags',
+  'remove_tags',
 ]);
 
 function safeToolError(error: unknown) {

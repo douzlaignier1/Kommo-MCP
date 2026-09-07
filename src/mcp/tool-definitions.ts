@@ -286,6 +286,118 @@ export const MCP_TOOLS: McpToolDefinition[] = [
     },
   },
   {
+    name: 'get_tags',
+    title: 'Listar tags',
+    description: 'Listar as tags cadastradas na conta para leads, contatos ou empresas.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        entity_type: {
+          type: 'string',
+          enum: ['leads', 'contacts', 'companies'],
+          description: 'Tipo da entidade',
+        },
+        ...paginationProperties,
+      },
+      required: ['entity_type'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'get_entity_tags',
+    title: 'Ler tags de um registro',
+    description: 'Listar as tags aplicadas a um lead, contato ou empresa específico.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        entity_type: {
+          type: 'string',
+          enum: ['leads', 'contacts', 'companies'],
+          description: 'Tipo da entidade',
+        },
+        entity_id: { type: 'number', description: 'ID da entidade' },
+      },
+      required: ['entity_type', 'entity_id'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'add_tags',
+    title: 'Adicionar tags',
+    description:
+      'Adicionar tags a um registro preservando as que já existem. Tags podem ser nomes (criadas se não existirem) ou ids.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        entity_type: {
+          type: 'string',
+          enum: ['leads', 'contacts', 'companies'],
+          description: 'Tipo da entidade',
+        },
+        entity_id: { type: 'number', description: 'ID da entidade' },
+        tags: {
+          type: 'array',
+          minItems: 1,
+          description: 'Tags a adicionar: nomes ou objetos com id/name',
+          items: {
+            oneOf: [
+              { type: 'string' },
+              {
+                type: 'object',
+                properties: { id: { type: 'number' }, name: { type: 'string' } },
+                additionalProperties: false,
+              },
+            ],
+          },
+        },
+        confirm: {
+          type: 'boolean',
+          description: 'Confirma explicitamente a operação de escrita quando exigido.',
+        },
+      },
+      required: ['entity_type', 'entity_id', 'tags'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'remove_tags',
+    title: 'Remover tags',
+    description:
+      'Remover tags específicas de um registro, mantendo as demais. Tags podem ser nomes ou ids.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        entity_type: {
+          type: 'string',
+          enum: ['leads', 'contacts', 'companies'],
+          description: 'Tipo da entidade',
+        },
+        entity_id: { type: 'number', description: 'ID da entidade' },
+        tags: {
+          type: 'array',
+          minItems: 1,
+          description: 'Tags a remover: nomes ou objetos com id/name',
+          items: {
+            oneOf: [
+              { type: 'string' },
+              {
+                type: 'object',
+                properties: { id: { type: 'number' }, name: { type: 'string' } },
+                additionalProperties: false,
+              },
+            ],
+          },
+        },
+        confirm: {
+          type: 'boolean',
+          description: 'Confirma explicitamente a operação de escrita quando exigido.',
+        },
+      },
+      required: ['entity_type', 'entity_id', 'tags'],
+      additionalProperties: false,
+    },
+  },
+  {
     name: 'get_users',
     title: 'Listar usuários',
     description: 'Obter lista de usuários da conta Kommo',
