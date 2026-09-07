@@ -169,6 +169,42 @@ export interface KommoReadableField {
   raw: Array<Record<string, unknown>>;
 }
 
+export type EventEntityType = 'lead' | 'contact' | 'company' | 'task' | 'customer';
+
+export interface EventListOptions {
+  limit?: number;
+  page?: number;
+  entityType?: EventEntityType;
+  entityId?: number;
+  types?: string[];
+  createdBy?: number;
+  createdFrom?: string;
+  createdTo?: string;
+  orderDirection?: SortDirection;
+}
+
+export interface EventListResponse {
+  _embedded: { events: Array<Record<string, unknown>> };
+  _page?: number;
+  _links?: Record<string, unknown>;
+}
+
+export interface UnsortedListOptions {
+  limit?: number;
+  page?: number;
+  category?: 'sip' | 'mail' | 'chats' | 'forms';
+  pipelineId?: number;
+  uid?: string;
+  orderBy?: 'created_at' | 'updated_at';
+  orderDirection?: SortDirection;
+}
+
+export interface UnsortedListResponse {
+  _embedded: { unsorted: Array<Record<string, unknown>> };
+  _page?: number;
+  _links?: Record<string, unknown>;
+}
+
 export interface KommoTag {
   id: number;
   name: string;
@@ -637,6 +673,68 @@ export class KommoAPI {
       }
       return target;
     });
+  }
+
+  // ===== EVENTOS / HISTÓRICO =====
+  async getEvents(options: EventListOptions = {}): Promise<EventListResponse> {
+    const params: KommoQueryParams = {
+      limit: options.limit ?? 100,
+      page: options.page ?? 1,
+      [`order[created_at]`]: options.orderDirection ?? 'desc',
+    };
+    if (options.entityType) params['filter[entity]'] = options.entityType;
+    if (options.entityId !== undefined) params['filter[entity_id][]'] = options.entityId;
+    if (options.createdBy !== undefined) params['filter[created_by][]'] = options.createdBy;
+    if (options.types?.length) {
+      options.types.forEach((type, index) => {
+        params[`filter[type][${index}]`] = type;
+      });
+    }
+    if (options.createdFrom || options.createdTo) {
+      const timezone = this.getBusinessTimezone(await this.getAccount());
+      if (options.createdFrom) {
+        params['filter[created_at][from]'] = zonedStartOfDay(
+          parseCalendarDate(options.createdFrom),
+          timezone,
+        );
+      }
+      if (options.createdTo) {
+        params['filter[created_at][to]'] =
+          zonedStartOfDay(addCalendarDays(parseCalendarDate(options.createdTo), 1), timezone) - 1;
+      }
+    }
+    const response = await this.client.get('/api/v4/events', { params });
+    // Sem eventos no recorte o Kommo responde 204 sem corpo.
+    return response.data && typeof response.data === 'object'
+      ? response.data
+      : { _embedded: { events: [] } };
+  }
+
+  async getEventTypes(): Promise<Record<string, unknown>> {
+    const response = await this.client.get('/api/v4/events/types');
+    return response.data && typeof response.data === 'object' ? response.data : {};
+  }
+
+  // ===== LEADS NÃO ORGANIZADOS =====
+  async getUnsorted(options: UnsortedListOptions = {}): Promise<UnsortedListResponse> {
+    const params: KommoQueryParams = {
+      limit: options.limit ?? 250,
+      page: options.page ?? 1,
+      [`order[${options.orderBy ?? 'created_at'}]`]: options.orderDirection ?? 'desc',
+    };
+    if (options.category) params['filter[category]'] = options.category;
+    if (options.pipelineId !== undefined) params['filter[pipeline_id]'] = options.pipelineId;
+    if (options.uid) params['filter[uid]'] = options.uid;
+    const response = await this.client.get('/api/v4/leads/unsorted', { params });
+    // Sem nenhum lead na caixa de entrada o Kommo responde 204 sem corpo.
+    return response.data && typeof response.data === 'object'
+      ? response.data
+      : { _embedded: { unsorted: [] } };
+  }
+
+  async getUnsortedSummary(): Promise<Record<string, unknown>> {
+    const response = await this.client.get('/api/v4/leads/unsorted/summary');
+    return response.data && typeof response.data === 'object' ? response.data : {};
   }
 
   // ===== TAGS =====

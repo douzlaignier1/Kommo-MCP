@@ -286,6 +286,81 @@ export const MCP_TOOLS: McpToolDefinition[] = [
     },
   },
   {
+    name: 'get_events',
+    title: 'Histórico de eventos',
+    description:
+      'Consultar o histórico de eventos do Kommo (mudanças de etapa, campos, tags, notas, responsável), com filtro por entidade, tipo, autor e período.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        ...paginationProperties,
+        entity_type: {
+          type: 'string',
+          enum: ['lead', 'contact', 'company', 'task', 'customer'],
+          description: 'Tipo da entidade (singular, como a API de eventos espera)',
+        },
+        entity_id: { type: 'number', description: 'ID da entidade' },
+        types: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Tipos de evento (ex.: lead_status_changed). Veja get_event_types.',
+        },
+        created_by: { type: 'number', description: 'Filtrar pelo usuário que gerou o evento' },
+        created_from: { type: 'string', description: 'A partir de (YYYY-MM-DD, inclusivo)' },
+        created_to: { type: 'string', description: 'Até (YYYY-MM-DD, inclusivo)' },
+        order_dir: {
+          type: 'string',
+          enum: ['asc', 'desc'],
+          description: 'Direção da ordenação por data (padrão: desc)',
+        },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'get_event_types',
+    title: 'Tipos de evento',
+    description: 'Listar os tipos de evento que a conta registra, para usar no filtro de get_events.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+  },
+  {
+    name: 'get_unsorted',
+    title: 'Listar leads não organizados',
+    description:
+      'Listar a caixa de entrada de leads não organizados (formulários, chats, e-mail, telefonia) ainda não aceitos no funil.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        ...paginationProperties,
+        category: {
+          type: 'string',
+          enum: ['sip', 'mail', 'chats', 'forms'],
+          description: 'Filtrar por origem',
+        },
+        pipeline_id: { type: 'number', description: 'Filtrar por funil de destino' },
+        uid: { type: 'string', description: 'Buscar um item específico pelo uid' },
+        order_by: {
+          type: 'string',
+          enum: ['created_at', 'updated_at'],
+          description: 'Campo de ordenação (padrão: created_at)',
+        },
+        order_dir: {
+          type: 'string',
+          enum: ['asc', 'desc'],
+          description: 'Direção da ordenação (padrão: desc)',
+        },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'get_unsorted_summary',
+    title: 'Resumo dos não organizados',
+    description:
+      'Totais da caixa de entrada de não organizados: aceitos, recusados, tempo médio de triagem e quebra por categoria.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+  },
+  {
     name: 'get_tags',
     title: 'Listar tags',
     description: 'Listar as tags cadastradas na conta para leads, contatos ou empresas.',

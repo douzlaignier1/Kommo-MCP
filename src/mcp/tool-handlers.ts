@@ -1,10 +1,12 @@
 import {
   KommoAPI,
   type CustomFieldInput,
+  type EventEntityType,
   type KommoEntityType,
   type LeadOrderField,
   type SortDirection,
   type TagInput,
+  type UnsortedListOptions,
 } from '../kommo-api.js';
 import { handleAskKommo } from '../ask-kommo.js';
 import type { McpToolResult } from './types.js';
@@ -186,6 +188,40 @@ export async function executeTool(
       }
       return textResult(await kommoAPI.updateCustomFields(entityType, entityId, fields));
     }
+
+    case 'get_events':
+      return textResult(
+        await kommoAPI.getEvents({
+          limit: (args?.limit as number) || 100,
+          page: (args?.page as number) || 1,
+          entityType: args?.entity_type as EventEntityType | undefined,
+          entityId: args?.entity_id as number | undefined,
+          types: args?.types as string[] | undefined,
+          createdBy: args?.created_by as number | undefined,
+          createdFrom: args?.created_from as string | undefined,
+          createdTo: args?.created_to as string | undefined,
+          orderDirection: args?.order_dir as SortDirection | undefined,
+        }),
+      );
+
+    case 'get_event_types':
+      return textResult(await kommoAPI.getEventTypes());
+
+    case 'get_unsorted':
+      return textResult(
+        await kommoAPI.getUnsorted({
+          limit: (args?.limit as number) || 250,
+          page: (args?.page as number) || 1,
+          category: args?.category as UnsortedListOptions['category'],
+          pipelineId: args?.pipeline_id as number | undefined,
+          uid: args?.uid as string | undefined,
+          orderBy: args?.order_by as UnsortedListOptions['orderBy'],
+          orderDirection: args?.order_dir as SortDirection | undefined,
+        }),
+      );
+
+    case 'get_unsorted_summary':
+      return textResult(await kommoAPI.getUnsortedSummary());
 
     case 'get_tags': {
       const entityType = args?.entity_type;
