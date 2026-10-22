@@ -362,6 +362,22 @@ export const MCP_TOOLS: McpToolDefinition[] = [
     inputSchema: { type: 'object', properties: {}, additionalProperties: false },
   },
   {
+    name: 'get_webhooks',
+    title: 'Listar webhooks assinados',
+    description:
+      'Listar os webhooks assinados na conta: id, destination (URL que recebe), settings (eventos assinados), created_at, updated_at e disabled. Serve de inventario: webhook apontando para URL morta aparece aqui.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        destination: {
+          type: 'string',
+          description: 'Opcional: filtrar por uma URL de destino exata.',
+        },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
     name: 'get_tags',
     title: 'Listar tags',
     description: 'Listar as tags cadastradas na conta para leads, contatos ou empresas.',

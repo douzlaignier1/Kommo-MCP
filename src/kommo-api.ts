@@ -737,6 +737,24 @@ export class KommoAPI {
     return response.data && typeof response.data === 'object' ? response.data : {};
   }
 
+  // ===== WEBHOOKS =====
+  /**
+   * Lista os webhooks assinados na conta (MCG-20, 12/09/2026).
+   * Motivo: o inventario de webhooks so existia na documentacao; nao havia tool de leitura,
+   * e a unica forma de conferir era disparar um workflow one-shot que executava metodo e
+   * caminho arbitrarios no Kommo sem autenticacao. Esse one-shot foi desligado por seguranca,
+   * entao a leitura passa a morar aqui.
+   * Cada item traz id, destination, settings (lista de eventos), created_at, updated_at e disabled.
+   */
+  async getWebhooks(destination?: string): Promise<{ _embedded: { webhooks: unknown[] } }> {
+    const response = await this.client.get('/api/v4/webhooks', {
+      params: destination ? { filter: { destination } } : undefined,
+    });
+    return response.data && typeof response.data === 'object'
+      ? response.data
+      : { _embedded: { webhooks: [] } };
+  }
+
   // ===== TAGS =====
   async getTags(
     entityType: KommoEntityType,

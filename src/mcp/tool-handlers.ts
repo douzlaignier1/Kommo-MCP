@@ -223,6 +223,9 @@ export async function executeTool(
     case 'get_unsorted_summary':
       return textResult(await kommoAPI.getUnsortedSummary());
 
+    case 'get_webhooks':
+      return textResult(await kommoAPI.getWebhooks(args?.destination as string | undefined));
+
     case 'get_tags': {
       const entityType = args?.entity_type;
       if (!isEntityType(entityType)) {
